@@ -1,5 +1,5 @@
 {
-  "name": "@mammothdevmaster/gmwallet-sdk",
+  "name": "@mammothlabs/gmwallet-sdk",
   "version": "0.0.1",
   "type": "module",
   "main": "dist/index.js",
@@ -50,11 +50,10 @@
     "url": "https://github.com/MammothDevMaster/GmWallet-SDK/issues"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
-    "access": "public",
-    "@mammothdevmaster:registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "devDependencies": {
     "@types/node": "^22.15.27",

@@ -4,28 +4,14 @@ A simple and lightweight SDK for integrating GMWallet into your web applications
 
 ## Installation
 
-### From npm registry (Recommended)
 ```bash
-npm install @mammothdevmaster/gmwallet-sdk
-```
-
-### From GitHub Packages
-First, configure npm to use GitHub Packages for the `@mammothdevmaster` scope:
-
-```bash
-# Create or update .npmrc file
-echo "@mammothdevmaster:registry=https://npm.pkg.github.com" >> .npmrc
-```
-
-Then install the package:
-```bash
-npm install @mammothdevmaster/gmwallet-sdk
+npm install @mammothlabs/gmwallet-sdk
 ```
 
 ## Quick Start
 
 ```javascript
-import { createWalletSDK } from "@mammothdevmaster/gmwallet-sdk";
+import { createWalletSDK } from "@mammothlabs/gmwallet-sdk";
 
 // Initialize SDK
 const sdk = createWalletSDK({
@@ -208,6 +194,7 @@ interface ConnectResult {
 
 ## Requirements
 
+- Node.js 20.0.0 or higher
 - Modern browser with WebSocket support
 - ES2018+ support
 - TypeScript 4.0+ (for TypeScript projects)
