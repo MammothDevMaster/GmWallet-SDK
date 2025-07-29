@@ -140,6 +140,90 @@ if (txResult.success) {
 }
 ```
 
+#### `personal_sign(account, message, signType?, modalOptions?)`
+
+Signs a personal message using the connected wallet.
+
+**Parameters:**
+
+- `account: string` - Wallet address to sign with
+- `message: string` - Message to sign
+- `signType?: string` - Optional sign type description (default: "Sign Message")
+- `modalOptions?: WalletModalOptions` - Modal customization options
+
+**Returns:** `Promise<SDKResult<ConnectResult>>`
+
+**Example:**
+
+```javascript
+const signResult = await sdk.personal_sign(
+  "0x...", // account
+  "Hello World!", // message
+  "Sign Message" // sign type (optional)
+);
+
+if (signResult.success) {
+  console.log("Message signed:", signResult.data);
+} else {
+  console.error("Signing failed:", signResult.error);
+}
+```
+
+#### `eth_signTypedDataV4(account, typeData, modalOptions?)`
+
+Signs structured data using EIP-712 standard.
+
+**Parameters:**
+
+- `account: string` - Wallet address to sign with
+- `typeData: object` - EIP-712 structured data object
+- `modalOptions?: WalletModalOptions` - Modal customization options
+
+**Returns:** `Promise<SDKResult<ConnectResult>>`
+
+**Example:**
+
+```javascript
+const typedData = {
+  domain: {
+    name: "My DApp",
+    version: "1",
+    chainId: "8989",
+    verifyingContract: "0x..."
+  },
+  message: {
+    from: "0x...",
+    to: "0x...",
+    amount: "1000000000000000000"
+  },
+  primaryType: "Transfer",
+  types: {
+    EIP712Domain: [
+      { name: "name", type: "string" },
+      { name: "version", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "verifyingContract", type: "address" }
+    ],
+    Transfer: [
+      { name: "from", type: "address" },
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" }
+    ]
+  }
+};
+
+const signResult = await sdk.eth_signTypedDataV4(
+  "0x...", // account
+  typedData
+);
+
+if (signResult.success) {
+  console.log("Typed data signed:", signResult.data);
+} else {
+  console.error("Signing failed:", signResult.error);
+}
+```
+
 ## Types
 
 ### SDKOptions
@@ -162,7 +246,10 @@ interface WalletState {
   address: string | null; // Wallet address
   chainId: 8989 | 898989; // Current chain ID
   isConnecting: boolean; // Connection in progress
+  status: boolean | null; // Last operation status
   error: string | null; // Last error message
+  tx: string | null; // Last transaction hash
+  signHash: string | null; // Last signature hash
 }
 ```
 
