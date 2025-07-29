@@ -1,0 +1,69 @@
+{
+  "name": "@mammothdevmaster/gmwallet-sdk",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "A simple and lightweight SDK for integrating GMWallet into web applications",
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prepack": "npm run build",
+    "build": "npm run clean && npm run build:tsc && npm run build:js && npm run build:assets",
+    "dev": "npm run clean && npm run build:tsc && npm run build:dev && npm run build:assets",
+    "build:tsc": "npx tsc --emitDeclarationOnly",
+    "build:js": "node build.js",
+    "build:dev": "node build.js --dev",
+    "build:assets": "cp -r src/assets/images dist/",
+    "clean": "rm -rf dist"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "keywords": [
+    "gmwallet",
+    "wallet",
+    "sdk",
+    "web3",
+    "blockchain",
+    "ethereum",
+    "gmmt",
+    "dapp",
+    "cryptocurrency"
+  ],
+  "author": "MammothLabs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MammothDevMaster/GmWallet-SDK.git"
+  },
+  "homepage": "https://github.com/MammothDevMaster/GmWallet-SDK#readme",
+  "bugs": {
+    "url": "https://github.com/MammothDevMaster/GmWallet-SDK/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "@mammothdevmaster:registry": "https://npm.pkg.github.com"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.27",
+    "@types/qrcode": "^1.5.5",
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "ethers": "^5.5.2",
+    "qrcode": "^1.5.4"
+  }
+}

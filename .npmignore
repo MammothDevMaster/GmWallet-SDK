@@ -1,0 +1,49 @@
+# Source files
+src/
+tsconfig.json
+build.js
+
+# Development files
+test.html
+node_modules/
+
+# Build artifacts
+*.tsbuildinfo
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+*.pem
+
+# Git
+.git/
+.gitignore
+
+# Testing
+coverage/
+.nyc_output/
+
+# Documentation (if not needed)
+docs/
+*.md
+!README.md
+
+# Misc
+.env*
+*.local
+*.tmp
+*.temp
+
+# License file should be included in npm package
+!LICENSE

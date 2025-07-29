@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2018",
+    "module": "ES2020",
+    "lib": ["ES2018", "DOM"],
+    "jsx": "react-jsx",
+    "declaration": true,
+    "outDir": "dist",
+    "strict": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src", "**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "test.html"]
+}
