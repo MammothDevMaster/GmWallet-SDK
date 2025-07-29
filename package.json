@@ -12,7 +12,6 @@
     "LICENSE"
   ],
   "scripts": {
-    "prepack": "npm run build",
     "build": "npm run clean && npm run build:tsc && npm run build:js && npm run build:assets",
     "dev": "npm run clean && npm run build:tsc && npm run build:dev && npm run build:assets",
     "build:tsc": "npx tsc --emitDeclarationOnly",
