@@ -27,11 +27,11 @@ jobs:
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org/'
+          cache: false
 
       - name: Install dependencies
         run: |
-          npm cache clean --force
-          npm ci --no-cache
+          npm ci
 
       - name: Set package version
         run: |
