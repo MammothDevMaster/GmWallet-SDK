@@ -32,9 +32,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build package
-        run: npm run build
-
       - name: Set package version
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -56,6 +53,9 @@ jobs:
             echo "Unknown event type: ${{ github.event_name }}"
             exit 1
           fi
+
+      - name: Build package
+        run: npm run build
 
       - name: Publish to npm registry
         run: npm publish

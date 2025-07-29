@@ -65,7 +65,7 @@ export class WalletSDK {
       });
 
       const requestData: RequestData = {
-        method: "",
+        method: "connect",
         chain_id: this.state.chainId,
         payload: {
           logoImageUrl: (this.state as any).icons || "",
