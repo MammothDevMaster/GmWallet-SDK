@@ -6,7 +6,9 @@ import {
   ConnectResult,
   CreateActiveResponse,
   PayloadType,
+  PendingRequest,
   RequestData,
+  RequestMethod,
   SDKOptions,
   SDKResult,
   WalletState,
@@ -25,7 +27,11 @@ export class WalletSDK {
   private socketManager: SocketManager;
   private modal: WalletModal;
   private currentSocketUrl: string = "";
-  private throwOnError: boolean;
+  private pendingRequests: Map<string, PendingRequest> = new Map();
+  private requestCounter: number = 0;
+  private currentConnectRequest: string | null = null;
+  private currentTransactionRequest: string | null = null;
+  private currentSignRequest: string | null = null;
 
   constructor(options: SDKOptions = {}) {
     this.state = {
@@ -39,7 +45,6 @@ export class WalletSDK {
       signHash: null,
     };
 
-    this.throwOnError = options.throwOnError ?? false;
     this.modal = new WalletModal();
     this.socketManager = new SocketManager(this.handleSocketMessage.bind(this));
 
@@ -52,10 +57,58 @@ export class WalletSDK {
     (this.state as any).icons = options.icons || null;
   }
 
+  private createPendingRequest<T>(method: RequestMethod, timeoutMs: number = 300000): { requestId: string; promise: Promise<SDKResult<T>> } {
+    const requestId = `${method}_${++this.requestCounter}_${Date.now()}`;
+    
+    const promise = new Promise<SDKResult<T>>((resolve) => {
+      const timeout = setTimeout(() => {
+        this.pendingRequests.delete(requestId);
+        resolve({ success: false, error: `${method} request timed out after ${timeoutMs}ms` });
+      }, timeoutMs);
+
+      this.pendingRequests.set(requestId, {
+        resolve,
+        reject: (error: Error) => resolve({ success: false, error: error.message }),
+        timeout,
+        method
+      });
+    });
+
+    return { requestId, promise };
+  }
+
+  private resolvePendingRequest(requestId: string, result: SDKResult<any>): void {
+    const pending = this.pendingRequests.get(requestId);
+    if (pending) {
+      clearTimeout(pending.timeout);
+      this.pendingRequests.delete(requestId);
+      pending.resolve(result);
+    }
+  }
+
+  private rejectPendingRequest(requestId: string, error: Error): void {
+    const pending = this.pendingRequests.get(requestId);
+    if (pending) {
+      clearTimeout(pending.timeout);
+      this.pendingRequests.delete(requestId);
+      pending.reject(error);
+    }
+  }
+
+  private rejectAllPendingRequests(error: Error): void {
+    for (const [requestId, pending] of this.pendingRequests) {
+      clearTimeout(pending.timeout);
+      pending.resolve({ success: false, error: error.message });
+    }
+    this.pendingRequests.clear();
+  }
+
   async connect(
     modalOptions: WalletModalOptions = {}
   ): Promise<SDKResult<ConnectResult>> {
     try {
+      this.rejectAllPendingRequests(new Error("New connection attempt started"));
+
       this.updateState({
         isConnecting: true,
         error: null,
@@ -82,16 +135,23 @@ export class WalletSDK {
       if (result.url && result.gmWalletUrl) {
         this.currentSocketUrl = result.url;
 
+        const { requestId, promise } = this.createPendingRequest<ConnectResult>("connect");
+        this.currentConnectRequest = requestId;
+
         this.modal.show(
           result.gmWalletUrl,
           modalOptions,
           () => this.refreshConnection(requestData),
-          () => this.handleModalClose()
+          () => {
+            this.rejectPendingRequest(requestId, new Error("Connection cancelled by user"));
+            this.currentConnectRequest = null;
+            this.handleModalClose();
+          }
         );
 
         await this.socketManager.connect(result.url);
 
-        return { success: true, data: result };
+        return await promise;
       } else {
         const errorMessage = "Failed to get connection URLs";
         this.updateState({
@@ -101,24 +161,21 @@ export class WalletSDK {
         });
         this.modal.updateStatus(errorMessage, "error");
 
-        if (this.throwOnError) {
-          throw new Error(errorMessage);
-        }
         return { success: false, error: errorMessage };
       }
     } catch (error) {
+      this.rejectAllPendingRequests(error instanceof Error ? error : new Error("Connection failed"));
+      
       const errorMessage =
         error instanceof Error ? error.message : "Connection failed";
       this.updateState({
+        isConnected: false,
         isConnecting: false,
         error: errorMessage,
         status: false,
       });
       this.modal.updateStatus(errorMessage, "error");
 
-      if (this.throwOnError) {
-        throw error;
-      }
       return { success: false, error: errorMessage };
     }
   }
@@ -181,15 +238,24 @@ export class WalletSDK {
       if (result.url && result.gmWalletUrl) {
         this.currentSocketUrl = result.url;
 
+        const { requestId, promise } = this.createPendingRequest<ConnectResult>("eth_sendTransaction");
+        this.currentTransactionRequest = requestId;
+
         this.modal.show(
           result.gmWalletUrl,
           modalOptions,
           () => this.refreshConnection(requestData),
-          () => this.handleModalClose()
+          () => {
+            this.rejectPendingRequest(requestId, new Error("Transaction cancelled by user"));
+            this.currentTransactionRequest = null;
+            this.handleModalClose();
+          }
         );
 
         await this.socketManager.connect(result.url);
-        return { success: true, data: result };
+        
+        // Wait for the actual transaction completion
+        return await promise;
       } else {
         const errorMessage = "Failed to get transaction URLs";
         this.updateState({
@@ -199,9 +265,6 @@ export class WalletSDK {
         });
         this.modal.updateStatus(errorMessage, "error");
 
-        if (this.throwOnError) {
-          throw new Error(errorMessage);
-        }
         return { success: false, error: errorMessage };
       }
     } catch (error) {
@@ -214,9 +277,6 @@ export class WalletSDK {
       });
       this.modal.updateStatus(errorMessage, "error");
 
-      if (this.throwOnError) {
-        throw error;
-      }
       return { success: false, error: errorMessage };
     }
   }
@@ -274,9 +334,6 @@ export class WalletSDK {
         });
         this.modal.updateStatus(errorMessage, "error");
 
-        if (this.throwOnError) {
-          throw new Error(errorMessage);
-        }
         return { success: false, error: errorMessage };
       }
     } catch (error) {
@@ -289,9 +346,6 @@ export class WalletSDK {
       });
       this.modal.updateStatus(errorMessage, "error");
 
-      if (this.throwOnError) {
-        throw error;
-      }
       return { success: false, error: errorMessage };
     }
   }
@@ -346,9 +400,6 @@ export class WalletSDK {
         });
         this.modal.updateStatus(errorMessage, "error");
 
-        if (this.throwOnError) {
-          throw new Error(errorMessage);
-        }
         return { success: false, error: errorMessage };
       }
     } catch (error) {
@@ -361,9 +412,6 @@ export class WalletSDK {
       });
       this.modal.updateStatus(errorMessage, "error");
 
-      if (this.throwOnError) {
-        throw error;
-      }
       return { success: false, error: errorMessage };
     }
   }
@@ -457,15 +505,18 @@ export class WalletSDK {
         try {
           const payload = data?.payload;
           if (!payload?.status) {
+            const errorMessage = payload?.message || "Connection failed";
             this.updateState({
               isConnecting: false,
-              error: payload?.message || "Connection failed",
+              error: errorMessage,
               status: false,
             });
-            this.modal.updateStatus(
-              payload?.message || "Connection failed",
-              "error"
-            );
+            this.modal.updateStatus(errorMessage, "error");
+            
+            if (this.currentConnectRequest) {
+              this.rejectPendingRequest(this.currentConnectRequest, new Error(errorMessage));
+              this.currentConnectRequest = null;
+            }
           } else if (payload?.status) {
             const address = payload?.data?.toLowerCase();
             this.updateState({
@@ -476,13 +527,27 @@ export class WalletSDK {
               status: true,
             });
             this.modal.updateStatus("Connected successfully!", "success");
+            
+            if (this.currentConnectRequest) {
+              this.resolvePendingRequest(this.currentConnectRequest, {
+                success: true,
+                data: { url: this.currentSocketUrl, gmWalletUrl: "", address }
+              });
+              this.currentConnectRequest = null;
+            }
           }
           this.socketManager.disconnect();
         } catch (err) {
           logger.error("Failed to parse response data:", err);
           this.modal.updateStatus("Failed to parse response", "error");
+          
+          if (this.currentConnectRequest) {
+            this.rejectPendingRequest(this.currentConnectRequest, new Error("Failed to parse response"));
+            this.currentConnectRequest = null;
+          }
         }
       } else if (data?.method === "eth_sendTransaction") {
+        console.debug("Handling eth_sendTransaction response");
         try {
           let payload = data?.payload;
           if (payload.status) {
@@ -494,16 +559,19 @@ export class WalletSDK {
           const tx = payload.data;
 
           if (!payload?.status) {
+            const errorMessage = payload?.message || "Transaction failed";
             this.updateState({
               isConnecting: false,
               tx: tx,
-              error: payload?.message || "Transaction failed",
+              error: errorMessage,
               status: false,
             });
-            this.modal.updateStatus(
-              payload?.message || "Transaction failed",
-              "error"
-            );
+            this.modal.updateStatus(errorMessage, "error");
+            
+            if (this.currentTransactionRequest) {
+              this.rejectPendingRequest(this.currentTransactionRequest, new Error(errorMessage));
+              this.currentTransactionRequest = null;
+            }
           } else if (payload?.status) {
             logger.debug("Transaction hash:", tx);
             this.updateState({
@@ -512,10 +580,19 @@ export class WalletSDK {
               tx: tx,
               status: true,
             });
+            logger.debug("Transaction completed successfully2:", tx);
             this.modal.updateStatus(
               "Transaction completed successfully!",
               "success"
             );
+            
+            if (this.currentTransactionRequest) {
+              this.resolvePendingRequest(this.currentTransactionRequest, {
+                success: true,
+                data: { url: this.currentSocketUrl, gmWalletUrl: "", tx }
+              });
+              this.currentTransactionRequest = null;  
+            }
           }
           this.socketManager.disconnect();
         } catch (err) {
@@ -524,6 +601,12 @@ export class WalletSDK {
             "Failed to parse transaction response",
             "error"
           );
+          
+          // Reject transaction request if pending
+          if (this.currentTransactionRequest) {
+            this.rejectPendingRequest(this.currentTransactionRequest, new Error("Failed to parse transaction response"));
+            this.currentTransactionRequest = null;
+          }
         }
       } else if (data?.method === "personal_sign") {
         try {

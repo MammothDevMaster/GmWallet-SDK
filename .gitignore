@@ -36,4 +36,5 @@ yarn-error.log*
 
 # Development test files
 test.html
+gmwallet-test-app/
 

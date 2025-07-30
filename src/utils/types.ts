@@ -3,7 +3,6 @@ export interface SDKOptions {
   url?: string;
   icons?: string;
   isMainnet?: boolean;
-  throwOnError?: boolean;
 }
 
 export interface WalletState {
@@ -54,3 +53,12 @@ export interface PayloadType {
   message: string;
   data: string;
 }
+
+export interface PendingRequest {
+  resolve: (value: SDKResult<any>) => void;
+  reject: (error: Error) => void;
+  timeout: NodeJS.Timeout;
+  method: string;
+}
+
+export type RequestMethod = "eth_sendTransaction" | "personal_sign" | "eth_signTypedDataV4" | "connect";
