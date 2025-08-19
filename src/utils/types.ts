@@ -47,6 +47,7 @@ export interface SDKResult<T = any> {
 
 export type SocketMessageCallback = (data: any) => void;
 export type ModalStatusType = "loading" | "success" | "error" | "connecting";
+export type ThemeType = "light" | "dark";
 
 export interface PayloadType {
   status: boolean;

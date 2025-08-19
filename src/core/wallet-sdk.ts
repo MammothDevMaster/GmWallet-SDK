@@ -58,7 +58,7 @@ export class WalletSDK {
   }
 
   private createPendingRequest<T>(method: RequestMethod, timeoutMs: number = 300000): { requestId: string; promise: Promise<SDKResult<T>> } {
-    const requestId = `${method}_${++this.requestCounter}_${Date.now()}`;
+    const requestId = `${method}_${++this.requestCounter}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     const promise = new Promise<SDKResult<T>>((resolve) => {
       const timeout = setTimeout(() => {
@@ -129,8 +129,6 @@ export class WalletSDK {
 
       const result = await this.requestActive(requestData);
 
-      if (!modalOptions.subTitleText)
-        modalOptions.subTitleText = "Connect GM Wallet";
 
       if (result.url && result.gmWalletUrl) {
         this.currentSocketUrl = result.url;
@@ -146,7 +144,8 @@ export class WalletSDK {
             this.rejectPendingRequest(requestId, new Error("Connection cancelled by user"));
             this.currentConnectRequest = null;
             this.handleModalClose();
-          }
+          },
+          "connect"
         );
 
         await this.socketManager.connect(result.url);
@@ -232,8 +231,6 @@ export class WalletSDK {
 
       const result = await this.requestActive(requestData);
 
-      if (!modalOptions.subTitleText)
-        modalOptions.subTitleText = "Sign transaction in GM Wallet";
 
       if (result.url && result.gmWalletUrl) {
         this.currentSocketUrl = result.url;
@@ -249,7 +246,8 @@ export class WalletSDK {
             this.rejectPendingRequest(requestId, new Error("Transaction cancelled by user"));
             this.currentTransactionRequest = null;
             this.handleModalClose();
-          }
+          },
+          "eth_sendTransaction"
         );
 
         await this.socketManager.connect(result.url);
@@ -310,8 +308,6 @@ export class WalletSDK {
       };
 
       const result = await this.requestActive(requestData);
-      if (!modalOptions.subTitleText)
-        modalOptions.subTitleText = "Personal Sign in GM Wallet";
 
       if (result.url && result.gmWalletUrl) {
         this.currentSocketUrl = result.url;
@@ -320,7 +316,8 @@ export class WalletSDK {
           result.gmWalletUrl,
           modalOptions,
           () => this.refreshConnection(requestData),
-          () => this.handleModalClose()
+          () => this.handleModalClose(),
+          "personal_sign"
         );
 
         await this.socketManager.connect(result.url);
@@ -377,8 +374,6 @@ export class WalletSDK {
       };
 
       const result = await this.requestActive(requestData);
-      if (!modalOptions.subTitleText)
-        modalOptions.subTitleText = "SignTypedDataV4 in GM Wallet";
       if (result.url && result.gmWalletUrl) {
         this.currentSocketUrl = result.url;
 
@@ -386,7 +381,8 @@ export class WalletSDK {
           result.gmWalletUrl,
           modalOptions,
           () => this.refreshConnection(requestData),
-          () => this.handleModalClose()
+          () => this.handleModalClose(),
+          "eth_signTypedDataV4"
         );
 
         await this.socketManager.connect(result.url);

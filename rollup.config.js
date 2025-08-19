@@ -5,6 +5,7 @@ import replace from '@rollup/plugin-replace';
 import dts from 'rollup-plugin-dts';
 import url from '@rollup/plugin-url';
 import image from '@rollup/plugin-image';
+import json from '@rollup/plugin-json';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -36,7 +37,8 @@ const baseConfig = {
       include: ['**/*.svg', '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif'],
       limit: Infinity,
     }),
-    image()
+    image(),
+    json()
   ]
 };
 
